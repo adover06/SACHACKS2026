@@ -312,9 +312,9 @@ export default function Home() {
                 : "bg-accent animate-pulse"
           }`}
         />
-        {backendStatus === "checking" && "Connecting to backend..."}
+        {/* {backendStatus === "checking" && "Connecting to backend..."}
         {backendStatus === "connected" && (USE_MOCK ? "Demo Mode" : "Backend connected")}
-        {backendStatus === "offline" && "Backend offline — start the server"}
+        {backendStatus === "offline" && "Backend offline — start the server"} */}
       </div>
 
       {/* Scanner */}
