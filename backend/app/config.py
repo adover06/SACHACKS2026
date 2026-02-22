@@ -2,7 +2,11 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # Ollama (local)
+    # Groq (cloud - primary for text)
+    GROQ_API_KEY: str = ""
+    GROQ_MODEL: str = "llama-3.1-8b-instant"
+
+    # Ollama (local - vision + text fallback)
     OLLAMA_BASE_URL: str = "http://localhost:11434"
     OLLAMA_VISION_MODEL: str = "llava"
     OLLAMA_TEXT_MODEL: str = "llama3"

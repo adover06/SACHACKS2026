@@ -211,7 +211,7 @@ async def run_substitution_check(
                 })
 
     # LLM fallback for items not in the table
-    if llm_needed and settings.OLLAMA_BASE_URL:
+    if llm_needed:
         try:
             llm_subs = await _llm_substitution(llm_needed, pantry_items, settings)
             # Merge LLM results back
@@ -226,17 +226,31 @@ async def run_substitution_check(
     return results
 
 
+def _get_text_llm(settings: Settings):
+    """Get the text LLM: Groq primary, Ollama fallback."""
+    if settings.GROQ_API_KEY:
+        from langchain_groq import ChatGroq
+        print("[SubstitutionExpert] Using Groq cloud LLM (primary)")
+        return ChatGroq(
+            api_key=settings.GROQ_API_KEY,
+            model=settings.GROQ_MODEL,
+            temperature=0,
+        )
+    print("[SubstitutionExpert] Using Ollama local LLM (no Groq key configured)")
+    return ChatOllama(
+        model=settings.OLLAMA_TEXT_MODEL,
+        base_url=settings.OLLAMA_BASE_URL,
+        temperature=0,
+    )
+
+
 async def _llm_substitution(
     missing_items: list[str],
     pantry_items: list[str],
     settings: Settings,
 ) -> dict[str, str | None]:
-    """Ask the LLM for substitutions for items not in the hardcoded table."""
-    llm = ChatOllama(
-        model=settings.OLLAMA_TEXT_MODEL,
-        base_url=settings.OLLAMA_BASE_URL,
-        temperature=0,
-    )
+    """Ask the LLM for substitutions for items not in the hardcoded table.
+    Uses Groq (fast cloud) primary, Ollama (local) fallback."""
 
     prompt = f"""You are a cooking substitution expert. For each missing ingredient below,
 suggest a practical cooking substitution using ONLY items from the available pantry list.
@@ -249,7 +263,26 @@ Return ONLY a JSON object mapping each missing ingredient to its substitution st
 Example: {{"ginger": "1/4 tsp dried ginger", "saffron": null}}
 Return ONLY the JSON object, no other text."""
 
-    response = await llm.ainvoke([HumanMessage(content=prompt)])
+    # Try Groq first, fall back to Ollama
+    llm = _get_text_llm(settings)
+    try:
+        response = await llm.ainvoke([HumanMessage(content=prompt)])
+        print("[SubstitutionExpert] LLM call succeeded (Groq)" if settings.GROQ_API_KEY else "[SubstitutionExpert] LLM call succeeded (Ollama)")
+    except Exception as e:
+        print(f"[SubstitutionExpert] Primary LLM failed: {e}")
+        # Groq failed (rate limit, network, etc.) — try Ollama
+        if settings.GROQ_API_KEY and settings.OLLAMA_BASE_URL:
+            print("[SubstitutionExpert] Falling back to Ollama local LLM...")
+            fallback = ChatOllama(
+                model=settings.OLLAMA_TEXT_MODEL,
+                base_url=settings.OLLAMA_BASE_URL,
+                temperature=0,
+            )
+            response = await fallback.ainvoke([HumanMessage(content=prompt)])
+            print("[SubstitutionExpert] Ollama fallback succeeded")
+        else:
+            print("[SubstitutionExpert] No fallback available, returning empty")
+            return {}
 
     try:
         data = json.loads(response.content)
