@@ -2,13 +2,15 @@
 
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
 import { generateRecipes } from "@/lib/api";
 import { mockRecipeResponse } from "@/lib/mockData";
+import { getUserProfile, saveAllergies } from "@/lib/user";
 import { ItemList } from "@/components/ItemList";
 import { FilterChips } from "@/components/FilterChips";
 import { Button } from "@/components/ui/Button";
 import { SkeletonItemList } from "@/components/ui/Skeleton";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === "true";
 
@@ -36,7 +38,27 @@ export default function ResultsPage() {
     setRecipesResult,
     setIsGenerating,
   } = useApp();
+  const { uid, guest } = useAuth();
   const [error, setError] = useState<string | null>(null);
+  const allergiesLoaded = useRef(false);
+
+  // Load saved allergies from Firestore for authenticated (non-guest) users
+  useEffect(() => {
+    if (allergiesLoaded.current || !uid || guest) return;
+    allergiesLoaded.current = true;
+
+    getUserProfile(uid)
+      .then((profile) => {
+        profile.allergies.forEach((allergy) => {
+          if (DIETARY_OPTIONS.includes(allergy)) {
+            toggleDietaryPreference(allergy);
+          }
+        });
+      })
+      .catch(() => {
+        // Silently fail — user can still select manually
+      });
+  }, [uid, guest, toggleDietaryPreference]);
 
   // No scan data — redirect to home
   if (!scanResult) {
@@ -58,6 +80,11 @@ export default function ResultsPage() {
     if (selectedItems.length === 0) return;
     setError(null);
     setIsGenerating(true);
+
+    // Save selected dietary preferences to Firestore for logged-in users
+    if (uid && !guest && dietaryPreferences.length > 0) {
+      saveAllergies(uid, dietaryPreferences).catch(() => {});
+    }
 
     try {
       let result;
@@ -128,7 +155,7 @@ export default function ResultsPage() {
 
       {/* Error */}
       {error && (
-        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mt-6 rounded-xl border border-danger/30 bg-danger/10 px-4 py-3 text-sm text-danger">
           {error}
         </div>
       )}
