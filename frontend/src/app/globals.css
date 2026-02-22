@@ -1,18 +1,35 @@
 @import "tailwindcss";
 
+/* ── Light: Sage / Cream ── */
 :root {
-  --background: #fafaf9;
-  --foreground: #1c1917;
-  --primary: #16a34a;
-  --primary-hover: #15803d;
-  --primary-light: #dcfce7;
-  --accent: #f59e0b;
-  --accent-light: #fef3c7;
-  --muted: #78716c;
-  --border: #e7e5e4;
-  --card: #ffffff;
-  --danger: #ef4444;
-  --success: #22c55e;
+  --background: #f5f0e8;
+  --foreground: #2d3a2e;
+  --primary: #6b8f71;
+  --primary-hover: #5a7a5f;
+  --primary-light: #dce8dc;
+  --accent: #c9a84c;
+  --accent-light: #f5ecd0;
+  --muted: #7c8a6e;
+  --border: #d6cdb8;
+  --card: #fffdf7;
+  --danger: #c0392b;
+  --success: #6b8f71;
+}
+
+/* ── Dark: Deep Charcoal / Muted Sage ── */
+.dark {
+  --background: #1a1e1a;
+  --foreground: #d4ddd4;
+  --primary: #8bab8f;
+  --primary-hover: #a3c1a7;
+  --primary-light: #2a3a2c;
+  --accent: #d4b65a;
+  --accent-light: #3a3320;
+  --muted: #8a9a7e;
+  --border: #2e382e;
+  --card: #222822;
+  --danger: #e07060;
+  --success: #8bab8f;
 }
 
 @theme inline {
@@ -46,7 +63,7 @@ body {
 }
 
 .skeleton {
-  background: linear-gradient(90deg, #e7e5e4 25%, #d6d3d1 50%, #e7e5e4 75%);
+  background: linear-gradient(90deg, var(--border) 25%, var(--card) 50%, var(--border) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
   border-radius: 8px;

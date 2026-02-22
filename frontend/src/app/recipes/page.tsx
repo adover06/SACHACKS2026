@@ -1,14 +1,26 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useApp } from "@/context/AppContext";
+import { useAuth } from "@/context/AuthContext";
+import { getUserProfile } from "@/lib/user";
 import { RecipeCard } from "@/components/RecipeCard";
 import { Button } from "@/components/ui/Button";
-import { SkeletonCard } from "@/components/ui/Skeleton";
 
 export default function RecipesPage() {
   const router = useRouter();
   const { recipesResult, selectedItems, reset } = useApp();
+  const { isLoggedIn, uid } = useAuth();
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+
+  // Load user's existing favorites to show filled hearts
+  useEffect(() => {
+    if (!isLoggedIn || !uid) return;
+    getUserProfile(uid)
+      .then((profile) => setFavoriteIds(new Set(profile.favoriteRecipes)))
+      .catch(() => {});
+  }, [isLoggedIn, uid]);
 
   // No recipes — show empty state
   if (!recipesResult) {
@@ -29,6 +41,15 @@ export default function RecipesPage() {
   const recipes = [...recipesResult.recipes].sort(
     (a, b) => b.academic_fuel_score - a.academic_fuel_score
   );
+
+  const handleFavoriteChange = (recipeId: string, isFavorited: boolean) => {
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (isFavorited) next.add(recipeId);
+      else next.delete(recipeId);
+      return next;
+    });
+  };
 
   return (
     <main>
@@ -56,7 +77,12 @@ export default function RecipesPage() {
       {/* Recipe cards */}
       <div className="space-y-6">
         {recipes.map((recipe) => (
-          <RecipeCard key={recipe.id} recipe={recipe} />
+          <RecipeCard
+            key={recipe.id}
+            recipe={recipe}
+            initialFavorited={favoriteIds.has(recipe.id)}
+            onFavoriteChange={handleFavoriteChange}
+          />
         ))}
       </div>
 
