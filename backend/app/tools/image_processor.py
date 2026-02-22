@@ -22,9 +22,7 @@ MAX_IMAGE_SIZE = 1024
 # COCO classes that are food-related
 FOOD_CLASSES = {
     "banana", "apple", "sandwich", "orange", "broccoli",
-    "carrot", "hot dog", "pizza", "donut", "cake",
-    "bottle", "wine glass", "cup", "fork", "knife",
-    "spoon", "bowl",
+    "carrot", "hot dog", "pizza",
 }
 
 # Map YOLO generic labels to better pantry names (None = skip)
